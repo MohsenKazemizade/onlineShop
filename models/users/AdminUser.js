@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const EmployeeUserSchema = new Schema({
+const AdminUserSchema = new Schema({
   phoneNumber: {
     type: Number,
     required: true,
@@ -11,6 +11,13 @@ const EmployeeUserSchema = new Schema({
     type: String,
     required: true,
   },
+  password: {
+    type: String,
+    required: true,
+  },
+  role: {
+    type: Schema.Types.ObjectId,
+  },
 });
 
-module.exports = mongoose.model('employeeUser', EmployeeUserSchema);
+module.export = mongoose.model('adminUser', AdminUserSchema);

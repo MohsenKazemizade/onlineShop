@@ -7,46 +7,13 @@ const CustomerUserSchema = new Schema({
     unique: true,
     required: true,
   },
-  fullName: {
-    type: String,
-    required: true,
-  },
   password: {
     type: String,
-  },
-  emailAddress: {
-    type: String,
-  },
-  customerPoint: {
-    type: Number,
   },
   date: {
     type: Date,
     default: Date.now,
   },
-  avatarCode: {
-    type: String,
-    default: 'defaultUser',
-  },
-  introducer: {
-    type: Schema.Types.ObjectId,
-    ref: 'introducerCode',
-  },
-  customerMessage: [
-    {
-      message: {
-        type: Schema.Types.ObjectId,
-        ref: 'customerMessage',
-      },
-      readed: {
-        type: Boolean,
-        default: false,
-      },
-    },
-  ],
 });
 
-module.exports = CustomerUser = mongoose.model(
-  'customerUser',
-  CustomerUserSchema
-);
+module.exports = mongoose.model('customerUser', CustomerUserSchema);
