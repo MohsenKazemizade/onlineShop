@@ -1,22 +1,22 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const EmployeeMessageSchema = new Schema({
+const EmployeeWarningSchema = new Schema({
   sender: {
     type: Schema.Types.ObjectId,
     ref: 'adminUser',
+  },
+  user: {
+    type: Schema.Types.ObjectId,
+    ref: 'employeeUser',
   },
   title: {
     type: String,
     required: true,
   },
-  text: {
+  description: {
     type: String,
     required: true,
-  },
-  read: {
-    type: Boolean,
-    default: false,
   },
   date: {
     type: Date,
@@ -24,4 +24,4 @@ const EmployeeMessageSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model('employeeMessage', EmployeeMessageSchema);
+module.exports = mongoose.model('employeeWarning', EmployeeWarningSchema);

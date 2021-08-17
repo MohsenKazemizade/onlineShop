@@ -12,14 +12,26 @@ const EmployeeProfileSchema = new Schema({
   },
   complaints: [
     {
-      type: Schema.Types.ObjectId,
-      ref: 'employeeComplaints',
+      message: {
+        type: Schema.Types.ObjectId,
+        ref: 'employeeComplaint',
+      },
+      read: {
+        type: Boolean,
+        defual: false,
+      },
     },
   ],
   warnings: [
     {
-      type: Schema.Types.ObjectId,
-      ref: 'employeeWarning',
+      message: {
+        type: Schema.Types.ObjectId,
+        ref: 'employeeWarning',
+      },
+      read: {
+        type: Boolean,
+        defual: false,
+      },
     },
   ],
 });

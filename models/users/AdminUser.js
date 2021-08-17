@@ -18,6 +18,10 @@ const AdminUserSchema = new Schema({
   role: {
     type: Schema.Types.ObjectId,
   },
+  date: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
 module.export = mongoose.model('adminUser', AdminUserSchema);
