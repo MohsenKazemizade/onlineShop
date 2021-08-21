@@ -10,13 +10,10 @@ const EmployeeRoleSchema = new Schema({
     type: String,
     required: true,
   },
-  accesses: [
-    {
-      accessCode: {
-        type: Schema.Types.ObjectId,
-      },
-    },
-  ],
+  accesses: {
+    type: String,
+    required: true,
+  },
   date: {
     type: Date,
     default: Date.now,
