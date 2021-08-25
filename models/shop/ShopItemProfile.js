@@ -6,31 +6,29 @@ const ShopItemProfileSchema = new Schema({
     ref: 'shopItem',
   },
   description: {
-    type: string,
+    type: String,
     required: true,
   },
   unit: {
-    type: string,
+    type: String,
     required: true,
   },
   minUnit: {
-    type: string,
+    type: String,
     required: true,
   },
   maxUnit: {
-    type: number,
+    type: Number,
     required: true,
   },
   availableAmount: {
-    type: number,
+    type: Number,
   },
   inShopCategory: {
-    type: string,
+    type: String,
     required: true,
   },
-  discount: {
-    type: number,
-  },
+
   blogLink: [
     {
       post: {
@@ -38,11 +36,11 @@ const ShopItemProfileSchema = new Schema({
         ref: 'blogposts',
       },
       title: {
-        type: string,
+        type: String,
         required: true,
       },
       link: {
-        type: string,
+        type: String,
         required: true,
       },
     },

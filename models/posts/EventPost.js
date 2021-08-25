@@ -32,7 +32,7 @@ const EventPostSchema = new Schema({
       ref: 'customerUser',
     },
   ],
-  customers: [
+  customersInvolved: [
     {
       type: Schema.Types.ObjectId,
       ref: 'customerUser',
