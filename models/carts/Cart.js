@@ -38,7 +38,56 @@ const CartSchema = new Schema({
   ],
   payed: {
     type: Boolean,
+    default: false,
     required: true,
+  },
+  delivered: {
+    type: Boolean,
+    default: false,
+  },
+  returned: [
+    {
+      done: {
+        type: Boolean,
+      },
+      time: {
+        type: Date,
+        default: Date.now,
+      },
+      agent: {
+        type: Schema.Types.ObjectId,
+        ref: 'employeeUser',
+      },
+      itemReturned: [
+        {
+          item: {
+            type: Schema.Types.ObjectId,
+            ref: 'shopItem',
+          },
+          amount: {
+            type: Number,
+          },
+          describ: {
+            type: String,
+            required: true,
+          },
+          itemCost: {
+            type: Number,
+            required: true,
+          },
+        },
+      ],
+    },
+  ],
+  cancellation: {
+    type: Boolean,
+    defualt: false,
+  },
+  whoCanceled: {
+    type: Schema.Types.ObjectId,
+  },
+  cancelDescrib: {
+    type: String,
   },
 });
 
