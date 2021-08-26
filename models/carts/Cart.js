@@ -39,7 +39,6 @@ const CartSchema = new Schema({
   payed: {
     type: Boolean,
     default: false,
-    required: true,
   },
   delivered: {
     type: Boolean,

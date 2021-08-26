@@ -6,9 +6,8 @@ const EmployeeProfileSchema = new Schema({
     type: String,
     required: true,
   },
-  picture: {
-    type: Schema.Types.ObjectId,
-    ref: 'profilePicture',
+  pictureURL: {
+    type: String,
   },
   complaints: [
     {
@@ -31,6 +30,21 @@ const EmployeeProfileSchema = new Schema({
       read: {
         type: Boolean,
         defual: false,
+      },
+    },
+  ],
+  employeeMessage: [
+    {
+      type: Schema.Types.ObjectId,
+    },
+  ],
+  docLinks: [
+    {
+      fileTitle: {
+        type: String,
+      },
+      fileURL: {
+        type: String,
       },
     },
   ],
