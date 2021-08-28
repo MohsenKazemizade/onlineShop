@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const EmployeeRoleSchema = new Schema({
+const RoleSchema = new Schema({
   title: {
     type: String,
     required: true,
@@ -20,4 +20,4 @@ const EmployeeRoleSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model('role', EmployeeRoleSchema);
+module.exports = mongoose.model('role', RoleSchema);

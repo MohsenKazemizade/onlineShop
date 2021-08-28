@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { body, checkSchema, validationResult } = require('express-validator');
+const bcrypt = require('bcryptjs');
+
+const AdminUser = require('../../models/users/AdminUser');
+const Role = require('../../models/Role');
 
 const schema = {
   phoneNumber: {
@@ -49,18 +53,44 @@ router.post(
     body('role').not().isEmpty().withMessage('Employee must have role'),
     checkSchema(schema),
   ],
-  (req, res) => {
+  async (req, res) => {
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    res.send('Admin user registered');
+
+    const { phoneNumber, password, fullName, role } = req.body;
+
+    try {
+      const user = await AdminUser.findOne({ phoneNumber });
+      const adminrole = await Role.findOne({ title: role });
+      if (!adminrole) {
+        return res.status(400).json({ errors: [{ msg: 'Role not found' }] });
+      }
+
+      if (user) {
+        return res
+          .status(400)
+          .json({ errors: [{ msg: 'admin user already exist' }] });
+      }
+      adminUser = new AdminUser({
+        phoneNumber,
+        fullName,
+        password,
+        role: adminrole.id,
+      });
+
+      const salt = await bcrypt.genSalt(10);
+      adminUser.password = await bcrypt.hash(password, salt);
+
+      await adminUser.save();
+      res.send('Admin user registered');
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('server error');
+    }
   }
 );
-// @route    POST api/users
-// @desc     Register AdminUser
-// @access   Public
-router.get('/');
 
 module.exports = router;

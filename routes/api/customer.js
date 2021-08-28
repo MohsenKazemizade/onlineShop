@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body, checkSchema, validationResult } = require('express-validator');
 
-const User = require('../../models/users/CustomerUser');
+const Customer = require('../../models/users/CustomerUser');
 
 const schema = {
   phoneNumber: {
@@ -58,27 +58,23 @@ router.post(
     const { phoneNumber } = req.body;
 
     try {
-      const user = await User.findOne({ phoneNumber });
+      const user = await Customer.findOne({ phoneNumber });
 
       if (user) {
-        return res.status(400).json({
-          errors: [
-            {
-              msg: 'User already exists',
-            },
-          ],
-        });
+        return res
+          .status(400)
+          .json({ errors: [{ msg: 'User already exists' }] });
       }
 
-      customerUser = new User({
+      customerUser = new Customer({
         phoneNumber,
       });
+      await customerUser.save();
+      res.send('Customer user Registered');
     } catch (err) {
       console.error(err.message);
       res.status(500).send('server error');
     }
-    await customerUser.save();
-    res.send('Customer user Registered');
   }
 );
 
