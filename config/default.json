@@ -1,3 +1,4 @@
 {
-  "mongoURI": "mongodb+srv://shop123:shop123@onlineshop.qrwlj.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
+  "mongoURI": "mongodb+srv://shop123:shop123@onlineshop.qrwlj.mongodb.net/myFirstDatabase?retryWrites=true&w=majority",
+  "jwtSecret": "mysecrettoken"
 }
