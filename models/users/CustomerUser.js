@@ -7,9 +7,6 @@ const CustomerUserSchema = new Schema({
     unique: true,
     required: true,
   },
-  password: {
-    type: String,
-  },
   date: {
     type: Date,
     default: Date.now,

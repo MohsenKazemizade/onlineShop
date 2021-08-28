@@ -2,6 +2,9 @@ const mongoose = required('mangoose');
 const Schema = mongoose.Schema;
 
 const CustomerProfileSchema = new Schema({
+  password: {
+    type: String,
+  },
   fullName: {
     type: String,
     required: true,

@@ -12,10 +12,10 @@ app.use(express.json({ extended: false }));
 app.get('/', (req, res) => res.send('API Running'));
 
 //Define routes
-app.use('/api/customer', require('./routes/api/customerRegister'));
-app.use('/api/admin', require('./routes/api/adminRegister'));
-app.use('/api/employee', require('./routes/api/employeeRegister'));
-app.use('/api/role', require('./routes/api/makeRolesRequest'));
+app.use('/api/customer', require('./routes/api/customer'));
+app.use('/api/admin', require('./routes/api/admin'));
+app.use('/api/employee', require('./routes/api/employee'));
+app.use('/api/role', require('./routes/api/makeRoles'));
 
 const PORT = process.env.PORT || 3000;
 

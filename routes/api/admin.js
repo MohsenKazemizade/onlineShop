@@ -19,7 +19,7 @@ const schema = {
   },
 };
 // @route    POST api/users
-// @desc     Register CustomerUser
+// @desc     Register AdminUser
 // @access   Public
 router.post(
   '/',
@@ -46,15 +46,21 @@ router.post(
       .withMessage('password is required')
       .isLength({ min: 8, max: 33 })
       .withMessage('password needs to have at least 8 charactors'),
+    body('role').not().isEmpty().withMessage('Employee must have role'),
     checkSchema(schema),
   ],
   (req, res) => {
     const errors = validationResult(req);
+
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    res.send('Customer user Registered');
+    res.send('Admin user registered');
   }
 );
+// @route    POST api/users
+// @desc     Register AdminUser
+// @access   Public
+router.get('/');
 
 module.exports = router;
