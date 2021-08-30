@@ -9,6 +9,7 @@ const auth = require('../../middleware/auth');
 const AdminUser = require('../../models/users/AdminUser');
 const Role = require('../../models/Role');
 const ShopItem = require('../../models/shop/ShopItem');
+const ShopItemProfile = require('../../models/shop/ShopItemProfile');
 
 const schema = {
   phoneNumber: {
@@ -228,7 +229,7 @@ router.get('/roles', auth, async (req, res) => {
 // @desc     Create Shop Item
 // @access   AdminUser
 router.post(
-  '/:id/shop',
+  '/shop/:id',
   auth,
   [
     body('title')
@@ -283,7 +284,56 @@ router.post(
     res.json(shopitem);
   }
 );
-
+// @route    POST /:id/shop/item_id
+// @desc     Create Shop Item Profile
+// @access   AdminUser
+router.post(
+  '/shop/:id/:item_id',
+  auth,
+  [
+    body('description', 'Description is required'),
+    body('unit', 'unit is required'),
+    body('minUnit', 'min unit is required'),
+    body('maxUnit', 'max unit is required'),
+    body('availableAmount', 'available amount is required'),
+    body('inShopCategory', 'in shop category is required'),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req, res);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const {
+      description,
+      unit,
+      minUnit,
+      maxUnit,
+      availableAmount,
+      inShopCategory,
+    } = req.body;
+    const itemProfile = {
+      item: req.params.item_id,
+      description,
+      unit,
+      minUnit,
+      maxUnit,
+      availableAmount,
+      inShopCategory,
+      maker: req.params.id,
+    };
+    try {
+      let profile = await ShopItemProfile.findOneAndUpdate(
+        { item: req.params.item_id },
+        { $set: itemProfile },
+        { new: true, upsert: true, setDefaultsOnInsert: true }
+      );
+      return res.json(profile);
+    } catch (err) {
+      console.error(err.message);
+      return res.status(500).send('server error');
+    }
+  }
+);
 // @route    GET /search *****
 // @desc     Get Items by title (admin search)
 // @access   adminUser

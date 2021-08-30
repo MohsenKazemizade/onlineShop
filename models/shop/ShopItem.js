@@ -11,7 +11,7 @@ const ShopItemSchema = new Schema({
     type: String,
     required: true,
   },
-  costPerUnite: {
+  costPerUnit: {
     type: Number,
     required: true,
   },
@@ -21,10 +21,6 @@ const ShopItemSchema = new Schema({
   date: {
     type: Date,
     default: Date.now,
-  },
-  adminCode: {
-    type: Number,
-    required: true,
   },
 });
 module.exports = mongoose.model('shopItem', ShopItemSchema);

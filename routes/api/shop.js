@@ -23,9 +23,9 @@ router.get('/', async (req, res) => {
 // @route    GET /
 // @desc     Get Item Profile By ID
 // @access   Public
-router.get('/:id', async (req, res) => {
+router.get('/:item_id', async (req, res) => {
   try {
-    const profile = await ShopItemProfile.findById(req.params.id);
+    const profile = await ShopItemProfile.findOne({ item: req.params.item_id });
     if (!profile)
       return res.status(400).json({ msg: 'item profile not found' });
     return res.json(profile);
