@@ -14,7 +14,7 @@ const ShopItemProfileSchema = new Schema({
     required: true,
   },
   minUnit: {
-    type: String,
+    type: Number,
     required: true,
   },
   maxUnit: {
@@ -23,28 +23,26 @@ const ShopItemProfileSchema = new Schema({
   },
   availableAmount: {
     type: Number,
+    required: true,
   },
   inShopCategory: {
     type: String,
     required: true,
   },
-
-  blogLink: [
+  date: {
+    type: Date,
+    default: Date.now,
+  },
+  maker: {
+    type: Schema.Types.ObjectId,
+    ref: 'adminUser',
+  },
+  blogPosts: [
     {
-      post: {
-        type: Schema.Types.ObjectId,
-        ref: 'blogposts',
-      },
-      title: {
-        type: String,
-        required: true,
-      },
-      link: {
-        type: String,
-        required: true,
-      },
+      type: Schema.Types.ObjectId,
+      ref: 'blogPost',
     },
   ],
 });
 
-module.exports = mongoose.model('shopItemProfile', ShopitemProfileSchema);
+module.exports = mongoose.model('shopItemProfile', ShopItemProfileSchema);

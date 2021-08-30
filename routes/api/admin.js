@@ -8,6 +8,7 @@ const auth = require('../../middleware/auth');
 
 const AdminUser = require('../../models/users/AdminUser');
 const Role = require('../../models/Role');
+const ShopItem = require('../../models/shop/ShopItem');
 
 const schema = {
   phoneNumber: {
@@ -68,15 +69,15 @@ router.post(
     try {
       const user = await AdminUser.findOne({ phoneNumber });
       const adminrole = await Role.findOne({ title: role });
-      if (!adminrole) {
-        return res.status(400).json({ errors: [{ msg: 'Role not found' }] });
-      }
-
       if (user) {
         return res
           .status(400)
           .json({ errors: [{ msg: 'admin user already exist' }] });
       }
+      if (!adminrole) {
+        return res.status(400).json({ errors: [{ msg: 'Role not found' }] });
+      }
+
       adminUser = new AdminUser({
         phoneNumber,
         fullName,
@@ -163,7 +164,7 @@ router.post(
         { expiresIn: 36000 },
         (err, token) => {
           if (err) throw err;
-          res.json({ token });
+          res.json({ token, payload });
         }
       );
     } catch (err) {
@@ -221,4 +222,70 @@ router.get('/roles', auth, async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
+
+// ;;;;;;;;;;;;;;SHOP;;;;;;;;;;;;;
+// @route    POST /:id/shop
+// @desc     Create Shop Item
+// @access   AdminUser
+router.post(
+  '/:id/shop',
+  auth,
+  [
+    body('title')
+      .not()
+      .isEmpty()
+      .trim()
+      .escape()
+      .withMessage('the shop item needs to have a title')
+      .isLowercase()
+      .withMessage('title needs to be lower case'),
+    body('pictureUrl')
+      .not()
+      .isEmpty()
+      .trim()
+      .escape()
+      .withMessage('piture is required'),
+    body('costPerUnit')
+      .not()
+      .isEmpty()
+      .trim()
+      .escape()
+      .withMessage('shop item needs to have a cost')
+      .isNumeric()
+      .withMessage('cost must be in number'),
+  ],
+
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const { title, pictureUrl, costPerUnit, discount } = req.body;
+    try {
+      const item = await ShopItem.findOne({ title });
+      if (item) {
+        return res
+          .status(401)
+          .json({ errors: [{ msg: 'item already exists' }] });
+      }
+      shopitem = new ShopItem({
+        title,
+        pictureUrl,
+        costPerUnit,
+        discount,
+        maker: req.params.id,
+      });
+      await shopitem.save();
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).json('server error');
+    }
+    res.json(shopitem);
+  }
+);
+
+// @route    GET /search *****
+// @desc     Get Items by title (admin search)
+// @access   adminUser
+
 module.exports = router;
