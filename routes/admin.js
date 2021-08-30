@@ -4,12 +4,12 @@ const { body, checkSchema, validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const config = require('config');
-const auth = require('../../middleware/auth');
+const auth = require('../middleware/auth');
 
-const AdminUser = require('../../models/users/AdminUser');
-const Role = require('../../models/Role');
-const ShopItem = require('../../models/shop/ShopItem');
-const ShopItemProfile = require('../../models/shop/ShopItemProfile');
+const AdminUser = require('../models/users/AdminUser');
+const Role = require('../models/Role');
+const ShopItem = require('../models/shop/ShopItem');
+const ShopItemProfile = require('../models/shop/ShopItemProfile');
 
 const schema = {
   phoneNumber: {
@@ -177,7 +177,7 @@ router.post(
 // ;;;;;;;;;;;;;;;;ROLE;;;;;;;;;;;;;;
 // @route    POST /roles
 // @desc     Register Role
-// @access   AdminUser
+// @access   Main AdminUser
 router.post(
   '/roles',
   auth,
@@ -224,7 +224,7 @@ router.get('/roles', auth, async (req, res) => {
   }
 });
 
-// ;;;;;;;;;;;;;;SHOP;;;;;;;;;;;;;
+// ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;SHOP;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 // @route    POST /:id/shop
 // @desc     Create Shop Item
 // @access   AdminUser
@@ -334,6 +334,32 @@ router.post(
     }
   }
 );
+// @route    GET /shop
+// @desc     Get All Shop Item
+// @access   AdminUser
+router.get('/shop', auth, async (req, res) => {
+  try {
+    const shopitems = await ShopItem.find();
+    res.json(shopitems);
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
+// @route    GET /shop/item_id
+// @desc     Get Shop Item Profile By item id
+// @access   AdminUser
+router.get('/shop/:item_id', auth, async (req, res) => {
+  try {
+    const singleShopItem = await ShopItemProfile.findOne({
+      item: req.params.item_id,
+    });
+    res.json(singleShopItem);
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
 // @route    GET /search *****
 // @desc     Get Items by title (admin search)
 // @access   adminUser

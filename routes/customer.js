@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body, checkSchema, validationResult } = require('express-validator');
 
-const Customer = require('../../models/users/CustomerUser');
+const Customer = require('../models/users/CustomerUser');
 
 const schema = {
   phoneNumber: {

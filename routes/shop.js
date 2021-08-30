@@ -4,10 +4,10 @@ const { body, checkSchema, validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const config = require('config');
-const auth = require('../../middleware/auth');
+const auth = require('../middleware/auth');
 
-const ShopItem = require('../../models/shop/ShopItem');
-const ShopItemProfile = require('../../models/shop/ShopItemProfile');
+const ShopItem = require('../models/shop/ShopItem');
+const ShopItemProfile = require('../models/shop/ShopItemProfile');
 // @route    GET /
 // @desc     Get All Shop items
 // @access   Public

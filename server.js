@@ -10,10 +10,10 @@ connectDB();
 app.use(express.json({ extended: false }));
 
 //Define routes
-app.use('/api/customer', require('./routes/api/customer'));
-app.use('/api/admin', require('./routes/api/admin'));
-app.use('/api/employee', require('./routes/api/employee'));
-app.use('/', require('./routes/api/shop'));
+app.use('/customer', require('./routes/customer'));
+app.use('/admin', require('./routes/admin'));
+app.use('/employee', require('./routes/employee'));
+app.use('/', require('./routes/shop'));
 
 const PORT = process.env.PORT || 3000;
 
