@@ -27,11 +27,13 @@ const schema = {
     },
   },
 };
-// @route    POST api/admin
+//;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;adminUser;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+// @route    POST /
 // @desc     Register AdminUser
-// @access   Public
+// @access   Main Admin User
 router.post(
   '/',
+  auth,
   [
     body('phoneNumber')
       .not()
@@ -65,9 +67,15 @@ router.post(
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { phoneNumber, password, fullName, role } = req.body;
+    const { phoneNumber, password, fullName, role, whoIsRole } = req.body;
 
     try {
+      const mainAdminRole = await Role.findById(whoIsRole);
+      if (!mainAdminRole)
+        return res.status(401).json({ msg: 'whoIsRole not valid' });
+      if (!mainAdminRole.title === 'Main') {
+        return res.status(401).json({ msg: 'you are not alowed to do that' });
+      }
       const user = await AdminUser.findOne({ phoneNumber });
       const adminrole = await Role.findOne({ title: role });
       if (user) {
@@ -111,8 +119,31 @@ router.post(
     }
   }
 );
+// @route    DELETE /
+// @desc     Delete AdminUser
+// @access   Main Admin User
+router.delete('/', auth, async (req, res) => {
+  const { adminUser, whoIsRole } = req.body;
+  try {
+    const mainAdminRole = await Role.findById(whoIsRole);
+    if (!mainAdminRole)
+      return res.status(401).json({ msg: 'whoIsRole not valid' });
+    if (!mainAdminRole.title === 'Main') {
+      return res.status(401).json({ msg: 'you are not alowed to do that' });
+    }
+    //remove user profiles
 
-// @route    POST api/admin/login
+    //remove user
+    if (!adminUser)
+      return res.status(401).json({ msg: 'admin user not found' });
+    await AdminUser.findOneAndRemove({ _id: adminUser });
+    res.json({ msg: 'User deleted successfully' });
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
+// @route    POST /login
 // @desc     Login AdminUser and get token
 // @access   Public
 router.post(
@@ -174,7 +205,19 @@ router.post(
     }
   }
 );
-// ;;;;;;;;;;;;;;;;ROLE;;;;;;;;;;;;;;
+// @route    GET /
+// @desc     Login AdminUser and get token
+// @access   Main AdminUser
+router.get('/', auth, async (req, res) => {
+  try {
+    const allAdminUsers = await AdminUser.find();
+    res.json(allAdminUsers);
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
+// ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;ROLE;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 // @route    POST /roles
 // @desc     Register Role
 // @access   Main AdminUser
@@ -213,7 +256,7 @@ router.post(
 
 // @route    GET /roles
 // @desc     Get All Role
-// @access   AdminUser
+// @access   Main AdminUser
 router.get('/roles', auth, async (req, res) => {
   try {
     const roles = await Role.find();
@@ -224,7 +267,7 @@ router.get('/roles', auth, async (req, res) => {
   }
 });
 
-// ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;SHOP;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+// ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;SHOP;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 // @route    POST /:id/shop
 // @desc     Create Shop Item
 // @access   AdminUser
