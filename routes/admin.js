@@ -10,7 +10,18 @@ const AdminUser = require('../models/users/AdminUser');
 const Role = require('../models/Role');
 const ShopItem = require('../models/shop/ShopItem');
 const ShopItemProfile = require('../models/shop/ShopItemProfile');
+const EmployeeUser = require('../models/users/EmployeeUser');
+const EmployeeProfile = require('../models/profiles/EmployeeProfile');
 
+const phoneNumberSchema = {
+  phoneNumber: {
+    in: 'body',
+    matches: {
+      options: [/^(\+98|0)?9\d{9}$/],
+      errorMessage: 'invalid phone number',
+    },
+  },
+};
 const schema = {
   phoneNumber: {
     in: 'body',
@@ -27,9 +38,18 @@ const schema = {
     },
   },
 };
+const passwordSchema = {
+  password: {
+    in: 'body',
+    matches: {
+      options: [/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/],
+      errorMessage: 'password must contain letters and number in english',
+    },
+  },
+};
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;adminUser;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 // @route    POST /
-// @desc     Register AdminUser
+// @desc     Create AdminUser
 // @access   Main Admin User
 router.post(
   '/',
@@ -206,7 +226,7 @@ router.post(
   }
 );
 // @route    GET /
-// @desc     Login AdminUser and get token
+// @desc     Get All Admin Users
 // @access   Main AdminUser
 router.get('/', auth, async (req, res) => {
   try {
@@ -217,6 +237,169 @@ router.get('/', auth, async (req, res) => {
     return res.status(500).send('server error');
   }
 });
+// ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;EmployeeUser;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+// @route    POST /employees
+// @desc     Create EmployeeUser
+// @access   Main Admin User
+router.post(
+  '/employees',
+  auth,
+  [
+    body('phoneNumber')
+      .not()
+      .isEmpty()
+      .withMessage('phone is required')
+      .isNumeric()
+      .withMessage('phone must contain nombers')
+      .isLength({ min: 11, max: 11 })
+      .withMessage('phone need to have 11 charectors')
+      .withMessage('not a mobile phone valid number'),
+    body('fullName')
+      .not()
+      .isEmpty()
+      .trim()
+      .escape()
+      .isLength({ min: 3 })
+      .withMessage('name can not be less than 3 charactors'),
+    checkSchema(phoneNumberSchema),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+      console.log('111');
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { phoneNumber, fullName, whoIsRole } = req.body;
+
+    try {
+      const mainAdminRole = await Role.findById(whoIsRole);
+      if (!mainAdminRole)
+        return res.status(401).json({ msg: 'whoIsRole not valid' });
+      if (!mainAdminRole.title === 'Main') {
+        return res.status(401).json({ msg: 'you are not alowed to do that' });
+      }
+      const user = await EmployeeUser.findOne({ phoneNumber });
+      if (user) {
+        return res
+          .status(400)
+          .json({ errors: [{ msg: 'admin user already exist' }] });
+      }
+
+      employeeUser = new EmployeeUser({
+        phoneNumber,
+        fullName,
+      });
+
+      await employeeUser.save();
+
+      const payload = {
+        user: {
+          id: employeeUser.id,
+        },
+      };
+      jwt.sign(
+        payload,
+        config.get('jwtSecret'),
+        { expiresIn: 36000 },
+        (err, token) => {
+          if (err) throw err;
+          res.json({ token });
+        }
+      );
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).send('server error');
+    }
+  }
+);
+// @route    GET /employees
+// @desc     Get All EmployeeUser
+// @access   Main Admin User
+router.get('/employees', auth, async (req, res) => {
+  const { whoIsRole } = req.body;
+
+  try {
+    const mainAdminRole = await Role.findById(whoIsRole);
+    if (!mainAdminRole)
+      return res.status(401).json({ msg: 'whoIsRole not valid' });
+    if (!mainAdminRole.title === 'Main') {
+      return res.status(401).json({ msg: 'you are not alowed to do that' });
+    }
+    const allEmployees = await EmployeeUser.find();
+    res.json(allEmployees);
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
+// @route    GET /employees/:id
+// @desc     Get Employee User Profile By ID
+// @access   Admin User
+router.get('/employees/:id', auth, async (req, res) => {
+  try {
+    const profile = await EmployeeProfile.findOne({
+      user: req.params.id,
+    }).select('-password');
+    if (!profile)
+      return res.status(401).json({ msg: 'Employee profile not found' });
+    res.json(profile);
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
+// @route    POST /employees/:id
+// @desc     Create Employee User Profile
+// @access   Main Admin User
+router.post(
+  '/employees/:id',
+  auth,
+  [
+    body('password')
+      .not()
+      .isEmpty()
+      .withMessage('password is required')
+      .isLength({ min: 8, max: 33 })
+      .withMessage('password needs to have at least 8 charactors'),
+    body('pictureURL', 'picture URL is required'),
+    checkSchema(passwordSchema),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const { password, pictureURL, whoIsRole } = req.body;
+    const itemProfile = {
+      user: req.params.id,
+      password,
+      pictureURL,
+    };
+
+    try {
+      const mainAdminRole = await Role.findById(whoIsRole);
+      if (!mainAdminRole)
+        return res.status(401).json({ msg: 'whoIsRole not valid' });
+      if (!mainAdminRole.title === 'Main') {
+        return res.status(401).json({ msg: 'you are not alowed to do that' });
+      }
+      const salt = await bcrypt.genSalt(10);
+      itemProfile.password = await bcrypt.hash(password, salt);
+
+      let profile = await EmployeeProfile.findOneAndUpdate(
+        { user: req.params.id },
+        { $set: itemProfile },
+        { new: true, upsert: true, setDefaultsOnInsert: true }
+      );
+      return res.json(profile);
+    } catch (err) {
+      console.error(err.message);
+      return res.status(500).send('server error');
+    }
+  }
+);
 // ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;ROLE;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 // @route    POST /roles
 // @desc     Register Role
@@ -342,7 +525,7 @@ router.post(
     body('inShopCategory', 'in shop category is required'),
   ],
   async (req, res) => {
-    const errors = validationResult(req, res);
+    const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }

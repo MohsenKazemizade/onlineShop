@@ -2,6 +2,13 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const EmployeeProfileSchema = new Schema({
+  user: {
+    type: Schema.Types.ObjectId,
+  },
+  isAdmin: {
+    type: Boolean,
+    default: false,
+  },
   password: {
     type: String,
     required: true,
@@ -35,7 +42,14 @@ const EmployeeProfileSchema = new Schema({
   ],
   employeeMessage: [
     {
-      type: Schema.Types.ObjectId,
+      message: {
+        type: Schema.Types.ObjectId,
+        ref: 'employeeMessage',
+      },
+      read: {
+        type: Boolean,
+        defual: false,
+      },
     },
   ],
   docLinks: [
