@@ -12,6 +12,7 @@ app.use(express.json({ extended: false }));
 //Define routes
 app.use('/customer', require('./routes/customer'));
 app.use('/admin', require('./routes/admin'));
+app.use('/mainadmin', require('./routes/mainAdmin'));
 app.use('/employee', require('./routes/employee'));
 app.use('/', require('./routes/shop'));
 

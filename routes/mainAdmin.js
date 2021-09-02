@@ -261,7 +261,13 @@ router.post(
       .escape()
       .isLength({ min: 3 })
       .withMessage('name can not be less than 3 charactors'),
-    checkSchema(phoneNumberSchema),
+    body('password')
+      .not()
+      .isEmpty()
+      .withMessage('password is required')
+      .isLength({ min: 8, max: 33 })
+      .withMessage('password needs to have at least 8 charactors'),
+    checkSchema(schema),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -271,7 +277,7 @@ router.post(
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { phoneNumber, fullName, whoIsRole } = req.body;
+    const { password, phoneNumber, fullName, whoIsRole } = req.body;
 
     try {
       const mainAdminRole = await Role.findById(whoIsRole);
@@ -284,13 +290,16 @@ router.post(
       if (user) {
         return res
           .status(400)
-          .json({ errors: [{ msg: 'admin user already exist' }] });
+          .json({ errors: [{ msg: 'Employee user already exist' }] });
       }
 
       employeeUser = new EmployeeUser({
         phoneNumber,
+        password,
         fullName,
       });
+      const salt = await bcrypt.genSalt(10);
+      employeeUser.password = await bcrypt.hash(password, salt);
 
       await employeeUser.save();
 
@@ -356,25 +365,15 @@ router.get('/employees/:id', auth, async (req, res) => {
 router.post(
   '/employees/:id',
   auth,
-  [
-    body('password')
-      .not()
-      .isEmpty()
-      .withMessage('password is required')
-      .isLength({ min: 8, max: 33 })
-      .withMessage('password needs to have at least 8 charactors'),
-    body('pictureURL', 'picture URL is required'),
-    checkSchema(passwordSchema),
-  ],
+  [body('pictureURL', 'picture URL is required')],
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const { password, pictureURL, whoIsRole } = req.body;
+    const { pictureURL, whoIsRole } = req.body;
     const itemProfile = {
       user: req.params.id,
-      password,
       pictureURL,
     };
 
@@ -385,8 +384,6 @@ router.post(
       if (!mainAdminRole.title === 'Main') {
         return res.status(401).json({ msg: 'you are not alowed to do that' });
       }
-      const salt = await bcrypt.genSalt(10);
-      itemProfile.password = await bcrypt.hash(password, salt);
 
       let profile = await EmployeeProfile.findOneAndUpdate(
         { user: req.params.id },
@@ -402,7 +399,7 @@ router.post(
 );
 // ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;ROLE;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 // @route    POST /roles
-// @desc     Register Role
+// @desc     Create Role
 // @access   Main AdminUser
 router.post(
   '/roles',
@@ -417,8 +414,14 @@ router.post(
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const { title, description, accesses } = req.body;
+    const { title, description, accesses, whoIsRole } = req.body;
     try {
+      const mainAdminRole = await Role.findById(whoIsRole);
+      if (!mainAdminRole)
+        return res.status(401).json({ msg: 'whoIsRole not valid' });
+      if (!mainAdminRole.title === 'Main') {
+        return res.status(401).json({ msg: 'you are not alowed to do that' });
+      }
       const role = await Role.findOne({ title });
       if (role) {
         return res
@@ -487,8 +490,14 @@ router.post(
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
-    const { title, pictureUrl, costPerUnit, discount } = req.body;
+    const { title, pictureUrl, costPerUnit, discount, whoIsRole } = req.body;
     try {
+      const mainAdminRole = await Role.findById(whoIsRole);
+      if (!mainAdminRole)
+        return res.status(401).json({ msg: 'whoIsRole not valid' });
+      if (!mainAdminRole.title === 'Main') {
+        return res.status(401).json({ msg: 'you are not alowed to do that' });
+      }
       const item = await ShopItem.findOne({ title });
       if (item) {
         return res
@@ -510,7 +519,7 @@ router.post(
     res.json(shopitem);
   }
 );
-// @route    POST /:id/shop/item_id
+// @route    POST /shop/:id/item_id
 // @desc     Create Shop Item Profile
 // @access   AdminUser
 router.post(

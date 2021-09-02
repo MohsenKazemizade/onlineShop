@@ -9,10 +9,6 @@ const EmployeeProfileSchema = new Schema({
     type: Boolean,
     default: false,
   },
-  password: {
-    type: String,
-    required: true,
-  },
   pictureURL: {
     type: String,
   },

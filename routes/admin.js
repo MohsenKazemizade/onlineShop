@@ -48,124 +48,9 @@ const passwordSchema = {
   },
 };
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;adminUser;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-// @route    POST /
-// @desc     Create AdminUser
-// @access   Main Admin User
-router.post(
-  '/',
-  auth,
-  [
-    body('phoneNumber')
-      .not()
-      .isEmpty()
-      .withMessage('phone is required')
-      .isNumeric()
-      .withMessage('phone must contain nombers')
-      .isLength({ min: 11, max: 11 })
-      .withMessage('phone need to have 11 charectors')
-      .withMessage('not a mobile phone valid number'),
-    body('fullName')
-      .not()
-      .isEmpty()
-      .trim()
-      .escape()
-      .isLength({ min: 3 })
-      .withMessage('name can not be less than 3 charactors'),
-    body('password')
-      .not()
-      .isEmpty()
-      .withMessage('password is required')
-      .isLength({ min: 8, max: 33 })
-      .withMessage('password needs to have at least 8 charactors'),
-    body('role').not().isEmpty().withMessage('Employee must have role'),
-    checkSchema(schema),
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { phoneNumber, password, fullName, role, whoIsRole } = req.body;
-
-    try {
-      const mainAdminRole = await Role.findById(whoIsRole);
-      if (!mainAdminRole)
-        return res.status(401).json({ msg: 'whoIsRole not valid' });
-      if (!mainAdminRole.title === 'Main') {
-        return res.status(401).json({ msg: 'you are not alowed to do that' });
-      }
-      const user = await AdminUser.findOne({ phoneNumber });
-      const adminrole = await Role.findOne({ title: role });
-      if (user) {
-        return res
-          .status(400)
-          .json({ errors: [{ msg: 'admin user already exist' }] });
-      }
-      if (!adminrole) {
-        return res.status(400).json({ errors: [{ msg: 'Role not found' }] });
-      }
-
-      adminUser = new AdminUser({
-        phoneNumber,
-        fullName,
-        password,
-        role: adminrole.id,
-      });
-
-      const salt = await bcrypt.genSalt(10);
-      adminUser.password = await bcrypt.hash(password, salt);
-
-      await adminUser.save();
-
-      const payload = {
-        user: {
-          id: adminUser.id,
-        },
-      };
-      jwt.sign(
-        payload,
-        config.get('jwtSecret'),
-        { expiresIn: 36000 },
-        (err, token) => {
-          if (err) throw err;
-          res.json({ token });
-        }
-      );
-    } catch (err) {
-      console.error(err.message);
-      res.status(500).send('server error');
-    }
-  }
-);
-// @route    DELETE /
-// @desc     Delete AdminUser
-// @access   Main Admin User
-router.delete('/', auth, async (req, res) => {
-  const { adminUser, whoIsRole } = req.body;
-  try {
-    const mainAdminRole = await Role.findById(whoIsRole);
-    if (!mainAdminRole)
-      return res.status(401).json({ msg: 'whoIsRole not valid' });
-    if (!mainAdminRole.title === 'Main') {
-      return res.status(401).json({ msg: 'you are not alowed to do that' });
-    }
-    //remove user profiles
-
-    //remove user
-    if (!adminUser)
-      return res.status(401).json({ msg: 'admin user not found' });
-    await AdminUser.findOneAndRemove({ _id: adminUser });
-    res.json({ msg: 'User deleted successfully' });
-  } catch (err) {
-    console.error(err.message);
-    return res.status(500).send('server error');
-  }
-});
 // @route    POST /login
 // @desc     Login AdminUser and get token
-// @access   Public
+// @access   AdminUser
 router.post(
   '/login',
   [
@@ -189,8 +74,10 @@ router.post(
     }
 
     const { phoneNumber, password } = req.body;
-
+    const mainAdminPhone = 09999999999;
     try {
+      if (phoneNumber == mainAdminPhone)
+        return res.status(401).json({ msg: 'you cant login here' });
       const user = await AdminUser.findOne({ phoneNumber });
       if (!user) {
         return res
@@ -226,97 +113,57 @@ router.post(
   }
 );
 // @route    GET /
-// @desc     Get All Admin Users
-// @access   Main AdminUser
+// @desc     Get AdminUser Profile By ID
+// @access   AdminUser
 router.get('/', auth, async (req, res) => {
+  const { adminUser } = req.body;
   try {
-    const allAdminUsers = await AdminUser.find();
-    res.json(allAdminUsers);
+    const profile = await EmployeeProfile.findOne({ user: adminUser });
+    if (!profile)
+      return res.status(401).json({ msg: 'there is no profile for this user' });
+
+    res.json(profile);
   } catch (err) {
     console.error(err.message);
     return res.status(500).send('server error');
   }
 });
-// ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;EmployeeUser;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-// @route    POST /employees
-// @desc     Create EmployeeUser
-// @access   Main Admin User
+// @route    POST /:id
+// @desc     Create/Update Admin User Profile
+// @access   AdminUser
 router.post(
-  '/employees',
+  '/:id',
   auth,
-  [
-    body('phoneNumber')
-      .not()
-      .isEmpty()
-      .withMessage('phone is required')
-      .isNumeric()
-      .withMessage('phone must contain nombers')
-      .isLength({ min: 11, max: 11 })
-      .withMessage('phone need to have 11 charectors')
-      .withMessage('not a mobile phone valid number'),
-    body('fullName')
-      .not()
-      .isEmpty()
-      .trim()
-      .escape()
-      .isLength({ min: 3 })
-      .withMessage('name can not be less than 3 charactors'),
-    checkSchema(phoneNumberSchema),
-  ],
+  [body('pictureURL', 'picture URL is required')],
   async (req, res) => {
     const errors = validationResult(req);
-
     if (!errors.isEmpty()) {
-      console.log('111');
       return res.status(400).json({ errors: errors.array() });
     }
-
-    const { phoneNumber, fullName, whoIsRole } = req.body;
+    const { pictureURL } = req.body;
 
     try {
-      const mainAdminRole = await Role.findById(whoIsRole);
-      if (!mainAdminRole)
-        return res.status(401).json({ msg: 'whoIsRole not valid' });
-      if (!mainAdminRole.title === 'Main') {
-        return res.status(401).json({ msg: 'you are not alowed to do that' });
-      }
-      const user = await EmployeeUser.findOne({ phoneNumber });
-      if (user) {
-        return res
-          .status(400)
-          .json({ errors: [{ msg: 'admin user already exist' }] });
-      }
-
-      employeeUser = new EmployeeUser({
-        phoneNumber,
-        fullName,
-      });
-
-      await employeeUser.save();
-
-      const payload = {
-        user: {
-          id: employeeUser.id,
-        },
+      const itemProfile = {
+        user: req.params.id,
+        pictureURL,
       };
-      jwt.sign(
-        payload,
-        config.get('jwtSecret'),
-        { expiresIn: 36000 },
-        (err, token) => {
-          if (err) throw err;
-          res.json({ token });
-        }
+
+      let profile = await EmployeeProfile.findOneAndUpdate(
+        { user: req.params.id },
+        { $set: itemProfile },
+        { new: true, upsert: true, setDefaultsOnInsert: true }
       );
+      return res.json(profile);
     } catch (err) {
       console.error(err.message);
-      res.status(500).send('server error');
+      return res.status(500).send('server error');
     }
   }
 );
+// ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;EmployeeUser;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 // @route    GET /employees
 // @desc     Get All EmployeeUser
-// @access   Main Admin User
+// @access   AdminUser
 router.get('/employees', auth, async (req, res) => {
   const { whoIsRole } = req.body;
 
@@ -336,7 +183,7 @@ router.get('/employees', auth, async (req, res) => {
 });
 // @route    GET /employees/:id
 // @desc     Get Employee User Profile By ID
-// @access   Admin User
+// @access   AdminUser
 router.get('/employees/:id', auth, async (req, res) => {
   try {
     const profile = await EmployeeProfile.findOne({
@@ -348,105 +195,6 @@ router.get('/employees/:id', auth, async (req, res) => {
   } catch (err) {
     console.error(err.message);
     return res.status(500).send('server error');
-  }
-});
-// @route    POST /employees/:id
-// @desc     Create Employee User Profile
-// @access   Main Admin User
-router.post(
-  '/employees/:id',
-  auth,
-  [
-    body('password')
-      .not()
-      .isEmpty()
-      .withMessage('password is required')
-      .isLength({ min: 8, max: 33 })
-      .withMessage('password needs to have at least 8 charactors'),
-    body('pictureURL', 'picture URL is required'),
-    checkSchema(passwordSchema),
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-    const { password, pictureURL, whoIsRole } = req.body;
-    const itemProfile = {
-      user: req.params.id,
-      password,
-      pictureURL,
-    };
-
-    try {
-      const mainAdminRole = await Role.findById(whoIsRole);
-      if (!mainAdminRole)
-        return res.status(401).json({ msg: 'whoIsRole not valid' });
-      if (!mainAdminRole.title === 'Main') {
-        return res.status(401).json({ msg: 'you are not alowed to do that' });
-      }
-      const salt = await bcrypt.genSalt(10);
-      itemProfile.password = await bcrypt.hash(password, salt);
-
-      let profile = await EmployeeProfile.findOneAndUpdate(
-        { user: req.params.id },
-        { $set: itemProfile },
-        { new: true, upsert: true, setDefaultsOnInsert: true }
-      );
-      return res.json(profile);
-    } catch (err) {
-      console.error(err.message);
-      return res.status(500).send('server error');
-    }
-  }
-);
-// ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;ROLE;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-// @route    POST /roles
-// @desc     Register Role
-// @access   Main AdminUser
-router.post(
-  '/roles',
-  auth,
-  [
-    body('title').not().isEmpty().withMessage('must have title'),
-    body('description').not().isEmpty().withMessage('describe this role'),
-    body('accesses').not().isEmpty().withMessage('accesses is required'),
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-    const { title, description, accesses } = req.body;
-    try {
-      const role = await Role.findOne({ title });
-      if (role) {
-        return res
-          .status(400)
-          .json({ errors: [{ msg: 'Role is already exist' }] });
-      }
-
-      adminRole = new Role({ title, description, accesses });
-
-      await adminRole.save();
-    } catch (err) {
-      console.error(err.message);
-      res.status(500).send('server error');
-    }
-    res.send('you maked the role');
-  }
-);
-
-// @route    GET /roles
-// @desc     Get All Role
-// @access   Main AdminUser
-router.get('/roles', auth, async (req, res) => {
-  try {
-    const roles = await Role.find();
-    res.json(roles);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
   }
 });
 
