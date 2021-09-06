@@ -119,20 +119,7 @@ router.post(
 
       await adminUser.save();
 
-      const payload = {
-        user: {
-          id: adminUser.id,
-        },
-      };
-      jwt.sign(
-        payload,
-        config.get('jwtSecret'),
-        { expiresIn: 36000 },
-        (err, token) => {
-          if (err) throw err;
-          res.json({ token });
-        }
-      );
+      res.json(adminUser);
     } catch (err) {
       console.error(err.message);
       res.status(500).send('server error');
@@ -154,10 +141,11 @@ router.delete('/', auth, async (req, res) => {
     //remove user profiles
 
     //remove user
-    if (!adminUser)
+    const userAdmin = await AdminUser.findOne({ _id: adminUser });
+    if (!userAdmin)
       return res.status(401).json({ msg: 'admin user not found' });
     await AdminUser.findOneAndRemove({ _id: adminUser });
-    res.json({ msg: 'User deleted successfully' });
+    res.json({ msg: `${userAdmin.fullName} deleted successfully` });
   } catch (err) {
     console.error(err.message);
     return res.status(500).send('server error');
@@ -208,6 +196,9 @@ router.post(
       const payload = {
         user: {
           id: user.id,
+        },
+        role: {
+          id: user.role,
         },
       };
       jwt.sign(
@@ -273,7 +264,6 @@ router.post(
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
-      console.log('111');
       return res.status(400).json({ errors: errors.array() });
     }
 
@@ -303,20 +293,7 @@ router.post(
 
       await employeeUser.save();
 
-      const payload = {
-        user: {
-          id: employeeUser.id,
-        },
-      };
-      jwt.sign(
-        payload,
-        config.get('jwtSecret'),
-        { expiresIn: 36000 },
-        (err, token) => {
-          if (err) throw err;
-          res.json({ token });
-        }
-      );
+      res.json(employeeUser);
     } catch (err) {
       console.error(err.message);
       res.status(500).send('server error');
@@ -343,10 +320,30 @@ router.get('/employees', auth, async (req, res) => {
     return res.status(500).send('server error');
   }
 });
-// @route    GET /employees/:id
+// @route    GET /employees/profiles
+// @desc     Get All Employee Users Profiles
+// @access   Main Admin User
+router.get('/employees/profiles', auth, async (req, res) => {
+  const { whoIsRole } = req.body;
+
+  try {
+    const mainAdminRole = await Role.findById(whoIsRole);
+    if (!mainAdminRole)
+      return res.status(401).json({ msg: 'whoIsRole not valid' });
+    if (!mainAdminRole.title === 'Main') {
+      return res.status(401).json({ msg: 'you are not alowed to do that' });
+    }
+    const allEmployeesProfiles = await EmployeeProfile.find();
+    res.json(allEmployeesProfiles);
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
+// @route    GET /employees/profile/:id
 // @desc     Get Employee User Profile By ID
 // @access   Admin User
-router.get('/employees/:id', auth, async (req, res) => {
+router.get('/employees/profile/:id', auth, async (req, res) => {
   try {
     const profile = await EmployeeProfile.findOne({
       user: req.params.id,
@@ -359,11 +356,11 @@ router.get('/employees/:id', auth, async (req, res) => {
     return res.status(500).send('server error');
   }
 });
-// @route    POST /employees/:id
-// @desc     Create Employee User Profile
+// @route    POST /employees/profile/:id
+// @desc     Create/update Employee User Profile
 // @access   Main Admin User
 router.post(
-  '/employees/:id',
+  '/employees/profile/:id',
   auth,
   [body('pictureURL', 'picture URL is required')],
   async (req, res) => {
@@ -436,7 +433,7 @@ router.post(
       console.error(err.message);
       res.status(500).send('server error');
     }
-    res.send('you maked the role');
+    res.json(adminRole);
   }
 );
 
@@ -454,7 +451,7 @@ router.get('/roles', auth, async (req, res) => {
 });
 
 // ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;SHOP;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-// @route    POST /:id/shop
+// @route    POST /shop/:id
 // @desc     Create Shop Item
 // @access   AdminUser
 router.post(
@@ -520,7 +517,7 @@ router.post(
   }
 );
 // @route    POST /shop/:id/item_id
-// @desc     Create Shop Item Profile
+// @desc     Create/update Shop Item Profile
 // @access   AdminUser
 router.post(
   '/shop/:id/:item_id',
