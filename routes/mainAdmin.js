@@ -12,6 +12,7 @@ const ShopItem = require('../models/shop/ShopItem');
 const ShopItemProfile = require('../models/shop/ShopItemProfile');
 const EmployeeUser = require('../models/users/EmployeeUser');
 const EmployeeProfile = require('../models/profiles/EmployeeProfile');
+const DiscountCard = require('../models/DiscountCard');
 
 const phoneNumberSchema = {
   phoneNumber: {
@@ -592,8 +593,103 @@ router.get('/shop/:item_id', auth, async (req, res) => {
     return res.status(500).send('server error');
   }
 });
-// @route    GET /search *****
-// @desc     Get Items by title (admin search)
-// @access   adminUser
+//;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;discountCard;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+//**********in code badan bayad bere samte client oonja generate beshe********
+// @route    POST /discount/newcode
+// @desc     POST NEW CODE
+// @access   MainAdminUser
+router.post('/discount/newcode', auth, async (req, res) => {
+  const { length } = req.body;
+  try {
+    if (!length) return res.status(401).json({ msg: 'we need length' });
+    // const newcode = length => {
+    let result = '';
+    let characters =
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let charactersLength = characters.length;
+    for (let i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    // return result;
+    return res.send(result);
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
+// @route    POST /discount
+// @desc     Create Discount Card
+// @access   MainAdminUser
+router.post(
+  '/discount/:id',
+  auth,
+  [
+    body('title'),
+    body('useCode'),
+    body('category'),
+    body('expiresIn'),
+    body('discountAmount'),
+    body('discountType'),
+    body('timesOfUseAvailable'),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const {
+      title,
+      useCode,
+      category,
+      expiresIn,
+      discountAmount,
+      discountType,
+      timesOfUseAvailable,
+      whoIsRole,
+    } = req.body;
+
+    try {
+      const mainAdminRole = await Role.findById(whoIsRole);
+      if (!mainAdminRole)
+        return res.status(401).json({ msg: 'whoIsRole not valid' });
+      if (!mainAdminRole.title === 'Main') {
+        return res.status(401).json({ msg: 'you are not alowed to do that' });
+      }
+      const newDiscountCard = await DiscountCard.findOne({ useCode });
+      if (newDiscountCard)
+        return res
+          .status(401)
+          .json({ msg: 'you have made this discount card before' });
+
+      discountCard = new DiscountCard({
+        title,
+        maker: req.params.id,
+        useCode,
+        category,
+        expiresIn,
+        discountAmount,
+        discountType,
+        timesOfUseAvailable,
+      });
+      await discountCard.save();
+      res.json(discountCard);
+    } catch (err) {
+      console.error(err.message);
+      res.status(500).json('server error');
+    }
+  }
+);
+// @route    GET /discount
+// @desc     GET all Discount Cards
+// @access   MainAdminUser
+router.get('/discount', auth, async (req, res) => {
+  try {
+    const allDiscountCards = await DiscountCard.find();
+    res.json(allDiscountCards);
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
 
 module.exports = router;

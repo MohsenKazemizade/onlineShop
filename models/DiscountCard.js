@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const schema = mongoose.schema;
+const Schema = mongoose.Schema;
 
 const DiscountCardSchema = new Schema({
   title: {
@@ -37,14 +37,19 @@ const DiscountCardSchema = new Schema({
       },
     },
   ],
-  useablePeriod: {
+  expiresIn: {
     type: Number,
+    default: 0,
   },
   discountAmount: {
     type: Number,
     required: true,
   },
-  roundsOfUse: {
+  discountType: {
+    type: String,
+    required: true,
+  },
+  timesOfUseAvailable: {
     type: Number,
   },
 });
