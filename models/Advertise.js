@@ -24,16 +24,7 @@ const AdvertiseSchema = new Schema({
   },
   link: {
     type: String,
-  },
-  date: {
-    type: Date,
-    default: Date.now,
-  },
-  maker: {
-    type: Schema,
-    Types,
-    ObjectId,
-    ref: 'adminUser',
+    required: true,
   },
   whoIsThisAdFor: {
     type: String,
@@ -41,6 +32,14 @@ const AdvertiseSchema = new Schema({
   },
   costOfAd: {
     type: Number,
+  },
+  date: {
+    type: Date,
+    default: Date.now,
+  },
+  maker: {
+    type: Schema.Types.ObjectId,
+    ref: 'adminUser',
   },
 });
 

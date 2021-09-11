@@ -13,6 +13,7 @@ const ShopItemProfile = require('../models/shop/ShopItemProfile');
 const EmployeeUser = require('../models/users/EmployeeUser');
 const EmployeeProfile = require('../models/profiles/EmployeeProfile');
 const DiscountCard = require('../models/DiscountCard');
+const Advertise = require('../models/Advertise');
 
 const phoneNumberSchema = {
   phoneNumber: {
@@ -343,7 +344,7 @@ router.get('/employees/profiles', auth, async (req, res) => {
 });
 // @route    GET /employees/profile/:id
 // @desc     Get Employee User Profile By ID
-// @access   Admin User
+// @access   Main Admin User
 router.get('/employees/profile/:id', auth, async (req, res) => {
   try {
     const profile = await EmployeeProfile.findOne({
@@ -454,7 +455,7 @@ router.get('/roles', auth, async (req, res) => {
 // ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;SHOP;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 // @route    POST /shop/:id
 // @desc     Create Shop Item
-// @access   AdminUser
+// @access   Main Admin User
 router.post(
   '/shop/:id',
   auth,
@@ -519,7 +520,7 @@ router.post(
 );
 // @route    POST /shop/:id/item_id
 // @desc     Create/update Shop Item Profile
-// @access   AdminUser
+// @access   Main Admin User
 router.post(
   '/shop/:id/:item_id',
   auth,
@@ -569,7 +570,7 @@ router.post(
 );
 // @route    GET /shop
 // @desc     Get All Shop Item
-// @access   AdminUser
+// @access   Main Admin User
 router.get('/shop', auth, async (req, res) => {
   try {
     const shopitems = await ShopItem.find();
@@ -581,7 +582,7 @@ router.get('/shop', auth, async (req, res) => {
 });
 // @route    GET /shop/item_id
 // @desc     Get Shop Item Profile By item id
-// @access   AdminUser
+// @access   Main Admin User
 router.get('/shop/:item_id', auth, async (req, res) => {
   try {
     const singleShopItem = await ShopItemProfile.findOne({
@@ -686,6 +687,95 @@ router.get('/discount', auth, async (req, res) => {
   try {
     const allDiscountCards = await DiscountCard.find();
     res.json(allDiscountCards);
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
+//;;;;;;;;;;;;;;;;;;;;;;;;;;;;;adrevtise;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+// @route    POST /add/:id
+// @desc     Create New Add
+// @access   MainAdminUser
+router.post(
+  '/add/:id',
+  auth,
+  [
+    body('title', 'title is required'),
+    body('pictureUrl', 'pictureUrl is required'),
+    body('description', 'description is required'),
+    body('periodOnScrean', 'periodOnScrean is required'),
+    body('whereToScrean', 'whereToScrean is required'),
+    body('link', 'link is required'),
+    body('whoIsThisAdFor', 'whoIsThisAdFor is required'),
+    body('maker', 'maker is required'),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    const {
+      title,
+      pictureUrl,
+      description,
+      periodOnScrean,
+      whereToScrean,
+      link,
+      whoIsThisAdFor,
+      costOfAd,
+    } = req.body;
+    try {
+      const add = await Advertise.findOne({ title });
+      if (add)
+        return res.status(401).json({ msg: 'this add is already created' });
+
+      newAdd = new Advertise({
+        title,
+        pictureUrl,
+        description,
+        periodOnScrean,
+        whereToScrean,
+        link,
+        whoIsThisAdFor,
+        costOfAd,
+        maker: req.param.id,
+      });
+      await newAdd.save();
+    } catch (err) {
+      console.error(err.message);
+      return res.status(500).send('server error');
+    }
+    res.json(newAdd);
+  }
+);
+// @route    GET /add
+// @desc     Get All Adds
+// @access   MainAdminUserw
+router.get('/add', auth, async (req, res) => {
+  try {
+    const AllAdds = await Advertise.find();
+    res.json(AllAdds);
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
+// @route    DELETE /add
+// @desc     Delete Add by id
+// @access   Main Admin User
+router.delete('/add', auth, async (req, res) => {
+  const { addId, whoIsRole } = req.body;
+  try {
+    const mainAdminRole = await Role.findById(whoIsRole);
+    if (!mainAdminRole)
+      return res.status(401).json({ msg: 'whoIsRole not valid' });
+    if (!mainAdminRole.title === 'Main') {
+      return res.status(401).json({ msg: 'you are not alowed to do that' });
+    }
+    const add = await Advertise.findOne({ _id: addId });
+    if (!add) return res.status(401).json({ msg: 'admin user not found' });
+    await Advertise.findOneAndRemove({ _id: addId });
+    res.json({ msg: `${add.title} deleted successfully` });
   } catch (err) {
     console.error(err.message);
     return res.status(500).send('server error');
