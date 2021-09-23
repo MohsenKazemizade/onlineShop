@@ -15,6 +15,7 @@ const EmployeeUser = require('../models/users/EmployeeUser');
 const EmployeeProfile = require('../models/profiles/EmployeeProfile');
 const DiscountCard = require('../models/DiscountCard');
 const Advertise = require('../models/Advertise');
+const DeliverySection = require('../models/DeliverySection');
 
 const phoneNumberSchema = {
   phoneNumber: {
@@ -805,6 +806,72 @@ router.get('/add/date', auth, async (req, res) => {
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;delivery;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 // @route    POST /delivery/:id
 // @desc     Create New Delivery Section
-// @access   MainAdminUser
+// @access   AdminUser
+router.post(
+  '/delivery/:id',
+  auth,
+  [
+    body('sectionStart', 'sectionStart is required'),
+    body('sectionEnd', 'sectionEnd is required'),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty())
+      return res.status(401).json({ errors: errors.array() });
 
+    const { sectionStart, sectionEnd } = req.body;
+    try {
+      const section = await DeliverySection.findOne({ sectionStart });
+      if (section)
+        return res.status(401).json({ msg: 'section is already exist' });
+
+      deliverySection = new DeliverySection({
+        sectionStart,
+        sectionEnd,
+        maker: req.params.id,
+      });
+      console.log(deliverySection);
+      await deliverySection.save();
+      res.json(deliverySection);
+    } catch (err) {
+      console.error(err.message);
+      return res.status(500).send('server error');
+    }
+  }
+);
+// @route    GET /delivery
+// @desc     Get All Delivery Section
+// @access   AdminUser
+router.get('/delivery', auth, async (req, res) => {
+  try {
+    const section = await DeliverySection.find();
+    res.json(section);
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
+// @route    DELETE /delivery
+// @desc     Get All Delivery Section
+// @access   AdminUser
+router.delete('/delivery/:id', auth, async (req, res) => {
+  const { sectionID } = req.body;
+  try {
+    const admin = await AdminUser.findById({ _id: req.params.id });
+    if (!admin)
+      return res
+        .statuse(401)
+        .json({ msg: 'you have no permission to do that' });
+
+    const section = await DeliverySection.findById({ _id: sectionID });
+    if (!section)
+      return res.statuse(401).json({ msg: 'this section is not exists' });
+
+    await DeliverySection.findOneAndRemove({ _id: sectionID });
+    res.json({ msg: 'section deleted successfully' });
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
 module.exports = router;
