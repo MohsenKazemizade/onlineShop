@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const config = require('config');
 const auth = require('../middleware/auth');
+const moment = require('moment');
 
 const AdminUser = require('../models/users/AdminUser');
 const Role = require('../models/Role');
@@ -48,6 +49,11 @@ const passwordSchema = {
       errorMessage: 'password must contain letters and number in english',
     },
   },
+};
+const converDateToUTCAndUnix = date => {
+  //moment().toISOString() // 2013-02-04T22:44:30.652Z
+  const unix = moment(new Date(date)).format('x');
+  return unix;
 };
 //;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;adminUser;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 // @route    POST /
@@ -438,7 +444,6 @@ router.post(
     res.json(adminRole);
   }
 );
-
 // @route    GET /roles
 // @desc     Get All Role
 // @access   Main AdminUser
@@ -451,7 +456,6 @@ router.get('/roles', auth, async (req, res) => {
     res.status(500).send('Server Error');
   }
 });
-
 // ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;SHOP;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 // @route    POST /shop/:id
 // @desc     Create Shop Item
@@ -692,7 +696,7 @@ router.get('/discount', auth, async (req, res) => {
     return res.status(500).send('server error');
   }
 });
-//;;;;;;;;;;;;;;;;;;;;;;;;;;;;;adrevtise;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+//;;;;;;;;;;;;;;;;;;;;;;;;;;;;;advertise;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 // @route    POST /add/:id
 // @desc     Create New Add
 // @access   MainAdminUser
@@ -738,7 +742,7 @@ router.post(
         link,
         whoIsThisAdFor,
         costOfAd,
-        maker: req.param.id,
+        maker: req.params.id,
       });
       await newAdd.save();
     } catch (err) {
@@ -781,5 +785,26 @@ router.delete('/add', auth, async (req, res) => {
     return res.status(500).send('server error');
   }
 });
+// @route    GET /add/date
+// @desc     Get Add by Date
+// @access   MainAdminUserw
+router.get('/add/date', auth, async (req, res) => {
+  const { date } = req.body;
+  const dateUTC = converDateToUTCAndUnix(date);
+  console.log(converDateToUTCAndUnix(date));
+  try {
+    const add = await Advertise.findOne({ date: dateUTC });
+    if (!add) return res.status(401).json({ msg: 'add not found' });
+    res.json(add);
+    console.log(add.date);
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
+//;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;delivery;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+// @route    POST /delivery/:id
+// @desc     Create New Delivery Section
+// @access   MainAdminUser
 
 module.exports = router;
