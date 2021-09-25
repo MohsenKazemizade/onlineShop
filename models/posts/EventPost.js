@@ -1,13 +1,9 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const EventPostSchema = new Schema({
-  user: {
+  maker: {
     type: Schema.Types.ObjectId,
     ref: 'adminUser',
-  },
-  date: {
-    type: Date,
-    default: Dater.now,
   },
   title: {
     type: String,
@@ -20,6 +16,10 @@ const EventPostSchema = new Schema({
   pictureUrl: {
     type: String,
   },
+  cost: {
+    type: Number,
+    required: true,
+  },
   comments: [
     {
       type: Schema.Types.ObjectId,
@@ -28,8 +28,10 @@ const EventPostSchema = new Schema({
   ],
   likes: [
     {
-      type: Schema.Types.ObjectId,
-      ref: 'customerUser',
+      user: {
+        type: Schema.Types.ObjectId,
+        ref: 'customerUser',
+      },
     },
   ],
   customersInvolved: [
@@ -38,5 +40,9 @@ const EventPostSchema = new Schema({
       ref: 'customerUser',
     },
   ],
+  date: {
+    type: Date,
+    default: Date.now,
+  },
 });
 module.exports = mongoose.model('eventPost', EventPostSchema);

@@ -17,6 +17,7 @@ const DiscountCard = require('../models/DiscountCard');
 const Advertise = require('../models/Advertise');
 const DeliverySection = require('../models/DeliverySection');
 const BlogPost = require('../models/posts/BlogPost');
+const EventPost = require('../models/posts/EventPost');
 
 const phoneNumberSchema = {
   phoneNumber: {
@@ -937,7 +938,7 @@ router.get('/blog/:post_id', auth, async (req, res) => {
     return res.status(500).send('server error');
   }
 });
-// @route    DELETE /blog/:post_id
+// @route    DELETE /blog
 // @desc     GET Blog Post By ID
 // @access   MainAdminUser
 router.delete('/blog', auth, async (req, res) => {
@@ -954,6 +955,93 @@ router.delete('/blog', auth, async (req, res) => {
       return res.status(401).json({ msg: 'this post was deleted already' });
 
     await BlogPost.findOneAndRemove({ _id: postId });
+    res.json({ msg: 'post deleted Successfully' });
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
+//;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;eventPost;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+// @route    POST /event/:id
+// @desc     Create New Event Post
+// @access   AdminUser
+router.post(
+  '/event/:id',
+  auth,
+  [
+    body('title', 'title is required'),
+    body('pictureUrl', 'pictureUrl is required'),
+    body('text', 'text is required'),
+    body('cost', 'cost is required'),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty())
+      return res.status(401).json({ errors: errors.array() });
+
+    const { title, text, pictureUrl, cost } = req.body;
+    try {
+      const post = await EventPost.findOne({ title });
+      if (post)
+        return res.status(401).json({ msg: 'this post is already exist' });
+
+      eventPost = new EventPost({
+        title,
+        pictureUrl,
+        text,
+        cost,
+        maker: req.params.id,
+      });
+      await eventPost.save();
+      res.json(eventPost);
+    } catch (err) {
+      console.error(err.message);
+      return res.status(500).send('server error');
+    }
+  }
+);
+// @route    GET /event
+// @desc     GET All event Posts
+// @access   AdminUser
+router.get('/event', auth, async (req, res) => {
+  try {
+    const eventPosts = await EventPost.find();
+    res.json(eventPosts);
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
+// @route    GET /event/:post_id
+// @desc     GET event Post By ID
+// @access   AdminUser
+router.get('/event/:post_id', auth, async (req, res) => {
+  try {
+    const post = await EventPost.findById({ _id: req.params.post_id });
+    if (!post) return res.status(401).json({ msg: 'this post is not exist' });
+    res.json(post);
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
+// @route    DELETE /event
+// @desc     GET event Post By ID
+// @access   MainAdminUser
+router.delete('/event', auth, async (req, res) => {
+  const { postId, whoIsRole } = req.body;
+  try {
+    const mainAdminRole = await Role.findById(whoIsRole);
+    if (!mainAdminRole)
+      return res.status(401).json({ msg: 'whoIsRole not valid' });
+    if (!mainAdminRole.title === 'Main') {
+      return res.status(401).json({ msg: 'you are not alowed to do that' });
+    }
+    const postMustDelete = await EventPost.findById({ _id: postId });
+    if (!postMustDelete)
+      return res.status(401).json({ msg: 'this post was deleted already' });
+
+    await EventPost.findOneAndRemove({ _id: postId });
     res.json({ msg: 'post deleted Successfully' });
   } catch (err) {
     console.error(err.message);
