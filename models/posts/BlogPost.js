@@ -1,13 +1,9 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const BlogPostSchema = new Schema({
-  user: {
+  maker: {
     type: Schema.Types.ObjectId,
     ref: 'adminUser',
-  },
-  date: {
-    type: Date,
-    default: Dater.now,
   },
   title: {
     type: String,
@@ -32,5 +28,9 @@ const BlogPostSchema = new Schema({
       ref: 'customerUser',
     },
   ],
+  date: {
+    type: Date,
+    default: Date.now,
+  },
 });
 module.exports = mongoose.model('blogPost', BlogPostSchema);

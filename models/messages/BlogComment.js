@@ -1,9 +1,13 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const CommentSchema = new Schema({
+const BlogCommentSchema = new Schema({
   sender: {
     type: Schema.Types.ObjectId,
+  },
+  text: {
+    type: String,
+    required: true,
   },
   readByAdmin: {
     type: Boolean,
@@ -11,14 +15,21 @@ const CommentSchema = new Schema({
   },
   belongsTo: {
     type: Schema.Types.ObjectId,
+    ref: 'blogPost',
   },
-  repliedTo: [
+  repliedTo: {
+    type: Schema.Types.ObjectId,
+    ref: 'comment',
+  },
+  like: [
     {
-      type: Schema.Types.ObjectId,
-      ref: 'comment',
+      user: {
+        type: Schema.Types.ObjectId,
+        ref: 'customerUser',
+      },
     },
   ],
-  like: [
+  disLike: [
     {
       user: {
         type: Schema.Types.ObjectId,
@@ -32,4 +43,4 @@ const CommentSchema = new Schema({
   },
 });
 
-module.exports = mongoose.model('comment', CommentSchema);
+module.exports = mongoose.model('blogComment', BlogCommentSchema);

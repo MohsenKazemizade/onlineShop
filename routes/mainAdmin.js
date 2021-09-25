@@ -16,6 +16,7 @@ const EmployeeProfile = require('../models/profiles/EmployeeProfile');
 const DiscountCard = require('../models/DiscountCard');
 const Advertise = require('../models/Advertise');
 const DeliverySection = require('../models/DeliverySection');
+const BlogPost = require('../models/posts/BlogPost');
 
 const phoneNumberSchema = {
   phoneNumber: {
@@ -869,6 +870,91 @@ router.delete('/delivery/:id', auth, async (req, res) => {
 
     await DeliverySection.findOneAndRemove({ _id: sectionID });
     res.json({ msg: 'section deleted successfully' });
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
+//;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;blogpost;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+// @route    POST /blog/:id
+// @desc     Create New Blog Post
+// @access   AdminUser
+router.post(
+  '/blog/:id',
+  auth,
+  [
+    body('title', 'title is required'),
+    body('pictureUrl', 'pictureUrl is required'),
+    body('text', 'text is required'),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty())
+      return res.status(401).json({ errors: errors.array() });
+
+    const { title, text, pictureUrl } = req.body;
+    try {
+      const post = await BlogPost.findOne({ title });
+      if (post)
+        return res.status(401).json({ msg: 'this post is already exist' });
+
+      blogPost = new BlogPost({
+        title,
+        pictureUrl,
+        text,
+        maker: req.params.id,
+      });
+      await blogPost.save();
+      res.json(blogPost);
+    } catch (err) {
+      console.error(err.message);
+      return res.status(500).send('server error');
+    }
+  }
+);
+// @route    GET /blog
+// @desc     GET All Blog Posts
+// @access   AdminUser
+router.get('/blog', auth, async (req, res) => {
+  try {
+    const blogPosts = await BlogPost.find();
+    res.json(blogPosts);
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
+// @route    GET /blog/:post_id
+// @desc     GET Blog Post By ID
+// @access   AdminUser
+router.get('/blog/:post_id', auth, async (req, res) => {
+  try {
+    const post = await BlogPost.findById({ _id: req.params.post_id });
+    if (!post) return res.status(401).json({ msg: 'this post is not exist' });
+    res.json(post);
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).send('server error');
+  }
+});
+// @route    DELETE /blog/:post_id
+// @desc     GET Blog Post By ID
+// @access   MainAdminUser
+router.delete('/blog', auth, async (req, res) => {
+  const { postId, whoIsRole } = req.body;
+  try {
+    const mainAdminRole = await Role.findById(whoIsRole);
+    if (!mainAdminRole)
+      return res.status(401).json({ msg: 'whoIsRole not valid' });
+    if (!mainAdminRole.title === 'Main') {
+      return res.status(401).json({ msg: 'you are not alowed to do that' });
+    }
+    const postMustDelete = await BlogPost.findById({ _id: postId });
+    if (!postMustDelete)
+      return res.status(401).json({ msg: 'this post was deleted already' });
+
+    await BlogPost.findOneAndRemove({ _id: postId });
+    res.json({ msg: 'post deleted Successfully' });
   } catch (err) {
     console.error(err.message);
     return res.status(500).send('server error');
